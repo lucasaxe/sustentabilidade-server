@@ -11,8 +11,13 @@ const connection = mysql.createConnection({
     password:'',
     database:'bd_tasks'
 });
+
 const app = new express();
-app.listen(3000, () => console.log('Servidor iniciado.'));
+const port = 3000;
+
+app.listen(port, () => console.log('Servidor iniciado.'));
+
+
 app.use(cors());
 app.use(express.json());
 
@@ -46,7 +51,7 @@ app.post('/increment', (req, res) => {
     const intervaloPermitido5 = moment().set({ hour: 17, minute: 30, second: 0 }), intervaloPermitido6 = moment().set({ hour: 19, minute: 45, second: 0 });
 
     // Verificar se estamos no intervalo permitido (12:00 às 14:00)
-    if(!(agora.isBetween(intervaloPermitido1, intervaloPermitido2, null, '[)') || agora.isBetween(intervaloPermitido3, intervaloPermitido4, null, '[)') || agora.isBetween(intervaloPermitido5, intervaloPermitido6, null, '[)'))) {
+    /*if(!(agora.isBetween(intervaloPermitido1, intervaloPermitido2, null, '[)') || agora.isBetween(intervaloPermitido3, intervaloPermitido4, null, '[)') || agora.isBetween(intervaloPermitido5, intervaloPermitido6, null, '[)'))) {
         console.log("Horário não permitido.");
         console.log(agora);
 
@@ -56,7 +61,7 @@ app.post('/increment', (req, res) => {
             res.json({ count: currentCount });
         });
     }else{
-        connection.query('SELECT quantidade FROM registros ORDER BY id DESC LIMIT 1', (err, result) => {
+        */connection.query('SELECT quantidade FROM registros ORDER BY id DESC LIMIT 1', (err, result) => {
             if (err) return res.status(500).send(err);
 
             const currentCount = result.length > 0 ? result[0].quantidade : 0;
@@ -67,7 +72,7 @@ app.post('/increment', (req, res) => {
                 res.json({ count: newCount });
             });
         });
-    }
+    //}
 });
 
 // Endpoint para incrementar o número e registrar a data
@@ -78,7 +83,7 @@ app.post('/increment_econo', (req, res) => {
     const minutos = agora.getMinutes(); // Minutos (não usado aqui, mas disponível)
 
     // Verificar se estamos no intervalo permitido (12:00 às 14:00)
-    if((horas<=6) || (horas<7 && minutos<30) || (horas>8 && horas<10) || (horas<11 && minutos<30) || (horas>14 && horas<17) || (horas<18 && minutos<30) || (horas>19 && minutos>40) || (horas>=20)) {
+    /*if((horas<=6) || (horas<7 && minutos<30) || (horas>8 && horas<10) || (horas<11 && minutos<30) || (horas>14 && horas<17) || (horas<18 && minutos<30) || (horas>19 && minutos>40) || (horas>=20)) {
         console.log("Horário não permitido.");
 
         connection.query('SELECT quantidade FROM economizados ORDER BY id DESC LIMIT 1', (err, result) => {
@@ -87,7 +92,7 @@ app.post('/increment_econo', (req, res) => {
             res.json({ count: currentCount });
         });
     }else{
-        connection.query('SELECT quantidade FROM economizados ORDER BY id DESC LIMIT 1', (err, result) => {
+        */connection.query('SELECT quantidade FROM economizados ORDER BY id DESC LIMIT 1', (err, result) => {
             if (err) return res.status(500).send(err);
 
             const currentCount = result.length > 0 ? result[0].quantidade : 0;
@@ -98,7 +103,7 @@ app.post('/increment_econo', (req, res) => {
                 res.json({ count: newCount });
             });
         });
-    }
+    //}
 });
 
 // Endpoint para obter o número atual
