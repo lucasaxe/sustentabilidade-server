@@ -5,13 +5,7 @@ const cors = require('cors');
 const moment = require('moment-timezone');
 
 //conexoes
-const connection = mysql.createConnection({
-    host:'localhost',
-    user:'root',
-    password:'',
-    database:'bd_tasks'
-});
-
+const connection = require('./db-config');
 const app = new express();
 const port = 3000;
 
