@@ -41,7 +41,7 @@ app.post('/increment', async (req, res) => {
         const currentCount = rows.length > 0 ? rows[0].quantidade : 0;
         const newCount = currentCount + 1;
 
-        await pool.query('INSERT INTO registros (quantidade, data) VALUES ($1, NOW())', [newCount]);
+        await pool.query('INSERT INTO registros (quantidade, data) VALUES ($1, (NOW() AT TIME ZONE \'America/Sao_Paulo\'))', [newCount]);
         res.json({ count: newCount });
     } catch (err) {
         res.status(500).send(err);
@@ -58,18 +58,43 @@ app.post('/increment_econo', async (req, res) => {
         const currentCount = rows.length > 0 ? rows[0].quantidade : 0;
         const newCount = currentCount + 1;
 
-        await pool.query('INSERT INTO economizados (quantidade, data) VALUES ($1, NOW())', [newCount]);
+        await pool.query('INSERT INTO economizados (quantidade, data) VALUES ($1, (NOW() AT TIME ZONE \'America/Sao_Paulo\'))', [newCount]);
         res.json({ count: newCount });
     } catch (err) {
         res.status(500).send(err);
     }
 });
 
+
+function getCountQuery(period) {
+    const timezone = `'America/Sao_Paulo'`;
+    const now = `CURRENT_TIMESTAMP AT TIME ZONE ${timezone}`;
+    const data = `data AT TIME ZONE ${timezone}`;
+
+    switch (period) {
+        case 'day':
+            return `
+                SELECT COUNT(*) AS total FROM registros WHERE CAST(${data} AS DATE) = (${now})::date`;
+        case 'week':
+            return `
+                SELECT COUNT(*) AS total FROM registros WHERE EXTRACT(WEEK FROM ${data}) = EXTRACT(WEEK FROM ${now})
+                AND EXTRACT(YEAR FROM ${data}) = EXTRACT(YEAR FROM ${now})`;
+        case 'month':
+            return `
+                SELECT COUNT(*) AS total FROM registros WHERE EXTRACT(MONTH FROM ${data}) = EXTRACT(MONTH FROM ${now})
+                AND EXTRACT(YEAR FROM ${data}) = EXTRACT(YEAR FROM ${now})`;
+        case 'year':
+            return `
+                SELECT COUNT(*) AS total FROM registros WHERE EXTRACT(YEAR FROM ${data}) = EXTRACT(YEAR FROM ${now})`;
+        default:
+            throw new Error('Invalid period');
+    }
+}
+
 app.get('/current-day', async (req, res) => {
     try {
-        const { rows } = await pool.query(`SELECT COUNT(*) AS total FROM registros WHERE CAST(data AS DATE) = CURRENT_DATE`);
-        const count_today = rows.length > 0 ? rows[0].total : 0;
-        res.json({ count_today });
+        const { rows } = await pool.query(getCountQuery('day'));
+        res.json({ count_today: rows[0].total });
     } catch (err) {
         res.status(500).send(err);
     }
@@ -77,12 +102,8 @@ app.get('/current-day', async (req, res) => {
 
 app.get('/current-week', async (req, res) => {
     try {
-        const { rows } = await pool.query(`
-        SELECT COUNT(*) AS total FROM registros WHERE EXTRACT(WEEK FROM data) = EXTRACT(WEEK FROM CURRENT_DATE)
-            AND EXTRACT(YEAR FROM data) = EXTRACT(YEAR FROM CURRENT_DATE)
-        `);
-        const count_week = rows.length > 0 ? rows[0].total : 0;
-        res.json({ count_week });
+        const { rows } = await pool.query(getCountQuery('week'));
+        res.json({ count_week: rows[0].total });
     } catch (err) {
         res.status(500).send(err);
     }
@@ -90,14 +111,8 @@ app.get('/current-week', async (req, res) => {
 
 app.get('/current-month', async (req, res) => {
     try {
-        const { rows } = await pool.query(`
-        SELECT COUNT(*) AS total
-        FROM registros
-        WHERE EXTRACT(MONTH FROM data) = EXTRACT(MONTH FROM CURRENT_DATE)
-            AND EXTRACT(YEAR FROM data) = EXTRACT(YEAR FROM CURRENT_DATE)
-        `);
-        const count_month = rows.length > 0 ? rows[0].total : 0;
-        res.json({ count_month });
+        const { rows } = await pool.query(getCountQuery('month'));
+        res.json({ count_month: rows[0].total });
     } catch (err) {
         res.status(500).send(err);
     }
@@ -105,13 +120,8 @@ app.get('/current-month', async (req, res) => {
 
 app.get('/current-year', async (req, res) => {
     try {
-        const { rows } = await pool.query(`
-        SELECT COUNT(*) AS total
-        FROM registros
-        WHERE EXTRACT(YEAR FROM data) = EXTRACT(YEAR FROM CURRENT_DATE)
-        `);
-        const count_year = rows.length > 0 ? rows[0].total : 0;
-        res.json({ count_year });
+        const { rows } = await pool.query(getCountQuery('year'));
+        res.json({ count_year: rows[0].total });
     } catch (err) {
         res.status(500).send(err);
     }
