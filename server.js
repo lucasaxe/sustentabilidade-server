@@ -1,136 +1,120 @@
-//importacoes
 const express = require('express');
-const mysql = require('mysql');
+const pool = require('./db-config');  // importa o pool
 const cors = require('cors');
 const moment = require('moment-timezone');
+require('dotenv').config();           // carrega o .env também aqui
 
-//conexoes
-const connection = require('./db-config');
-const app = new express();
+const app = express();
 const port = 3000;
 
-app.listen(port, () => console.log('Servidor iniciado.'));
-
+app.listen(port, () => console.log('Servidor iniciado na porta', port));
 
 app.use(cors());
 app.use(express.json());
 
+// Rotas
 
-//rotas
-
-// Endpoint para obter o número atual
-app.get('/current-count', (req, res) => {
-    connection.query('SELECT quantidade FROM registros ORDER BY id DESC LIMIT 1', (err, result) => {
-        if (err) return res.status(500).send(err);
-        const count1 = result.length > 0 ? result[0].quantidade : 0;
+app.get('/current-count', async (req, res) => {
+    try {
+        const { rows } = await pool.query('SELECT quantidade FROM registros ORDER BY id DESC LIMIT 1');
+        const count1 = rows.length > 0 ? rows[0].quantidade : 0;
         res.json({ count: count1 });
-    });
+    } catch (err) {
+        res.status(500).send(err);
+    }
 });
 
-// Endpoint para obter o número atual
-app.get('/current-econo', (req, res) => {
-    connection.query('SELECT quantidade FROM economizados ORDER BY id DESC LIMIT 1', (err, result) => {
-        if (err) return res.status(500).send(err);
-        const countEcono = result.length > 0 ? result[0].quantidade : 0;
+app.get('/current-econo', async (req, res) => {
+    try {
+        const { rows } = await pool.query('SELECT quantidade FROM economizados ORDER BY id DESC LIMIT 1');
+        const countEcono = rows.length > 0 ? rows[0].quantidade : 0;
         res.json({ countEcono });
-    });
+    } catch (err) {
+        res.status(500).send(err);
+    }
 });
 
-// Endpoint para incrementar o número e registrar a data
-app.post('/increment', (req, res) => {
-    // Obter a hora atual
-    const agora = moment().tz('America/Sao_Paulo');
-    const intervaloPermitido1 = moment().set({ hour: 6, minute: 30, second: 0 }), intervaloPermitido2 = moment().set({ hour: 8, minute: 0, second: 0 });
-    const intervaloPermitido3 = moment().set({ hour: 10, minute: 30, second: 0 }), intervaloPermitido4 = moment().set({ hour: 14, minute: 0, second: 0 });
-    const intervaloPermitido5 = moment().set({ hour: 17, minute: 30, second: 0 }), intervaloPermitido6 = moment().set({ hour: 19, minute: 45, second: 0 });
+app.post('/increment', async (req, res) => {
+    try {
+        const agora = moment().tz('America/Sao_Paulo');
+        const { rows } = await pool.query('SELECT quantidade FROM registros ORDER BY id DESC LIMIT 1');
+        const currentCount = rows.length > 0 ? rows[0].quantidade : 0;
+        const newCount = currentCount + 1;
 
-    // Verificar se estamos no intervalo permitido (12:00 às 14:00)
-    /*if(!(agora.isBetween(intervaloPermitido1, intervaloPermitido2, null, '[)') || agora.isBetween(intervaloPermitido3, intervaloPermitido4, null, '[)') || agora.isBetween(intervaloPermitido5, intervaloPermitido6, null, '[)'))) {
-        console.log("Horário não permitido.");
-        console.log(agora);
-
-        connection.query('SELECT quantidade FROM registros ORDER BY id DESC LIMIT 1', (err, result) => {
-            if (err) return res.status(500).send(err);
-            const currentCount = result.length > 0 ? result[0].quantidade : 0;
-            res.json({ count: currentCount });
-        });
-    }else{
-        */connection.query('SELECT quantidade FROM registros ORDER BY id DESC LIMIT 1', (err, result) => {
-            if (err) return res.status(500).send(err);
-
-            const currentCount = result.length > 0 ? result[0].quantidade : 0;
-            const newCount = currentCount + 1;
-
-            connection.query('INSERT INTO registros (quantidade, data) VALUES (?, NOW())', [newCount], (err) => {
-                if (err) return res.status(500).send(err);
-                res.json({ count: newCount });
-            });
-        });
-    //}
+        await pool.query('INSERT INTO registros (quantidade, data) VALUES ($1, NOW())', [newCount]);
+        res.json({ count: newCount });
+    } catch (err) {
+        res.status(500).send(err);
+    }
 });
 
-// Endpoint para incrementar o número e registrar a data
-app.post('/increment_econo', (req, res) => {
-    // Obter a hora atual
-    const agora = new Date();
-    const horas = agora.getHours(); // Horas no formato 24h
-    const minutos = agora.getMinutes(); // Minutos (não usado aqui, mas disponível)
+app.post('/increment_econo', async (req, res) => {
+    try {
+        const agora = new Date();
+        const horas = agora.getHours();
+        const minutos = agora.getMinutes();
 
-    // Verificar se estamos no intervalo permitido (12:00 às 14:00)
-    /*if((horas<=6) || (horas<7 && minutos<30) || (horas>8 && horas<10) || (horas<11 && minutos<30) || (horas>14 && horas<17) || (horas<18 && minutos<30) || (horas>19 && minutos>40) || (horas>=20)) {
-        console.log("Horário não permitido.");
+        const { rows } = await pool.query('SELECT quantidade FROM economizados ORDER BY id DESC LIMIT 1');
+        const currentCount = rows.length > 0 ? rows[0].quantidade : 0;
+        const newCount = currentCount + 1;
 
-        connection.query('SELECT quantidade FROM economizados ORDER BY id DESC LIMIT 1', (err, result) => {
-            if (err) return res.status(500).send(err);
-            const currentCount = result.length > 0 ? result[0].quantidade : 0;
-            res.json({ count: currentCount });
-        });
-    }else{
-        */connection.query('SELECT quantidade FROM economizados ORDER BY id DESC LIMIT 1', (err, result) => {
-            if (err) return res.status(500).send(err);
-
-            const currentCount = result.length > 0 ? result[0].quantidade : 0;
-            const newCount = currentCount + 1;
-
-            connection.query('INSERT INTO economizados (quantidade, data) VALUES (?, NOW())', [newCount], (err) => {
-                if (err) return res.status(500).send(err);
-                res.json({ count: newCount });
-            });
-        });
-    //}
+        await pool.query('INSERT INTO economizados (quantidade, data) VALUES ($1, NOW())', [newCount]);
+        res.json({ count: newCount });
+    } catch (err) {
+        res.status(500).send(err);
+    }
 });
 
-// Endpoint para obter o número atual
-app.get('/current-day', (req, res) => {
-    connection.query('SELECT COUNT(*) AS total FROM registros WHERE DAY(data) = DAY(CURRENT_DATE)  AND MONTH(data) = MONTH(CURRENT_DATE) AND YEAR(data) = YEAR(CURRENT_DATE)', (err, result) => {
-        if (err) return res.status(500).send(err);
-        const count_today = result.length > 0 ? result[0].total : 0;
+app.get('/current-day', async (req, res) => {
+    try {
+        const { rows } = await pool.query('SELECT COUNT(*) AS total FROM registros WHERE DATE(data) = CURRENT_DATE');
+        const count_today = rows.length > 0 ? rows[0].total : 0;
         res.json({ count_today });
-    });
+    } catch (err) {
+        res.status(500).send(err);
+    }
 });
 
-// Endpoint para obter o número atual
-app.get('/current-week', (req, res) => {
-    connection.query('SELECT COUNT(*) AS total FROM registros WHERE WEEK(data) = WEEK(CURRENT_DATE) AND MONTH(data) = MONTH(CURRENT_DATE) AND YEAR(data) = YEAR(CURRENT_DATE)', (err, result) => {
-        const count_week = result.length > 0 ? result[0].total : 0;
+app.get('/current-week', async (req, res) => {
+    try {
+        const { rows } = await pool.query(`
+        SELECT COUNT(*) AS total
+        FROM registros
+        WHERE EXTRACT(WEEK FROM data) = EXTRACT(WEEK FROM CURRENT_DATE)
+            AND EXTRACT(YEAR FROM data) = EXTRACT(YEAR FROM CURRENT_DATE)
+        `);
+        const count_week = rows.length > 0 ? rows[0].total : 0;
         res.json({ count_week });
-    });
+    } catch (err) {
+        res.status(500).send(err);
+    }
 });
 
-// Endpoint para obter o número atual
-app.get('/current-month', (req, res) => {
-    connection.query('SELECT COUNT(*) AS total FROM registros WHERE MONTH(data) = MONTH(CURRENT_DATE) AND YEAR(data) = YEAR(CURRENT_DATE)', (err, result) => {
-        if (err) return res.status(500).send(err);
-        const count_month = result.length > 0 ? result[0].total : 0;
+app.get('/current-month', async (req, res) => {
+    try {
+        const { rows } = await pool.query(`
+        SELECT COUNT(*) AS total
+        FROM registros
+        WHERE EXTRACT(MONTH FROM data) = EXTRACT(MONTH FROM CURRENT_DATE)
+            AND EXTRACT(YEAR FROM data) = EXTRACT(YEAR FROM CURRENT_DATE)
+        `);
+        const count_month = rows.length > 0 ? rows[0].total : 0;
         res.json({ count_month });
-    });
+    } catch (err) {
+        res.status(500).send(err);
+    }
 });
 
-// Endpoint para obter o número atual
-app.get('/current-year', (req, res) => {
-    connection.query('SELECT COUNT(*) AS total FROM registros WHERE YEAR(data) = YEAR(CURRENT_DATE)', (err, result) => {
-        if (err) return res.status(500).send(err);
-        const count_year = result.length > 0 ? result[0].total : 0;
+app.get('/current-year', async (req, res) => {
+    try {
+        const { rows } = await pool.query(`
+        SELECT COUNT(*) AS total
+        FROM registros
+        WHERE EXTRACT(YEAR FROM data) = EXTRACT(YEAR FROM CURRENT_DATE)
+        `);
+        const count_year = rows.length > 0 ? rows[0].total : 0;
         res.json({ count_year });
-    });
+    } catch (err) {
+        res.status(500).send(err);
+    }
 });
