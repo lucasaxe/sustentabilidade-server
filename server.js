@@ -67,7 +67,7 @@ app.post('/increment_econo', async (req, res) => {
 
 app.get('/current-day', async (req, res) => {
     try {
-        const { rows } = await pool.query('SELECT COUNT(*) AS total FROM registros WHERE DATE(data) = CURRENT_DATE');
+        const { rows } = await pool.query(`SELECT COUNT(*) AS total FROM registros WHERE EXTRACT(DATE FROM data) = EXTRACT(DATE FROM CURRENT_DATE`);
         const count_today = rows.length > 0 ? rows[0].total : 0;
         res.json({ count_today });
     } catch (err) {
@@ -78,9 +78,7 @@ app.get('/current-day', async (req, res) => {
 app.get('/current-week', async (req, res) => {
     try {
         const { rows } = await pool.query(`
-        SELECT COUNT(*) AS total
-        FROM registros
-        WHERE EXTRACT(WEEK FROM data) = EXTRACT(WEEK FROM CURRENT_DATE)
+        SELECT COUNT(*) AS total FROM registros WHERE EXTRACT(WEEK FROM data) = EXTRACT(WEEK FROM CURRENT_DATE)
             AND EXTRACT(YEAR FROM data) = EXTRACT(YEAR FROM CURRENT_DATE)
         `);
         const count_week = rows.length > 0 ? rows[0].total : 0;
