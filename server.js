@@ -49,9 +49,9 @@ app.post('/increment', async (req, res) => {
             estaNoIntervalo(horaAtual, "10:30", "14:00") ||   // Almoço
             estaNoIntervalo(horaAtual, "17:30", "19:45");     // Jantar
 
-        if (!emHorarioPermitido) {
+        /*if (!emHorarioPermitido) {
             return res.status(400).json({ message: "Horário não permitido para registro." });
-        }
+        }*/
 
         // Para /increment
         const { rows } = await pool.query('SELECT quantidade FROM registros ORDER BY id DESC LIMIT 1');
@@ -79,9 +79,9 @@ app.post('/increment_econo', async (req, res) => {
             estaNoIntervalo(horaAtual, "10:30", "14:00") ||   // Almoço
             estaNoIntervalo(horaAtual, "17:30", "19:45");     // Jantar
 
-        if (!emHorarioPermitido) {
+        /*if (!emHorarioPermitido) {
             return res.status(400).json({ message: "Horário não permitido para registro." });
-        }
+        }*/
 
         // Para /increment_econo
         const { rows } = await pool.query('SELECT quantidade FROM economizados ORDER BY id DESC LIMIT 1');
