@@ -12,6 +12,8 @@ app.listen(port, () => console.log('Servidor iniciado na porta', port));
 app.use(cors());
 app.use(express.json());
 
+const API_URL = 'https://sustentabilidade-server.onrender.com';
+
 // Rotas
 
 app.get('/current-count', async (req, res) => {
@@ -49,9 +51,9 @@ app.post('/increment', async (req, res) => {
             estaNoIntervalo(horaAtual, "10:30", "14:00") ||   // Almoço
             estaNoIntervalo(horaAtual, "17:30", "19:45");     // Jantar
 
-        /*if (!emHorarioPermitido) {
+        if (!emHorarioPermitido) {
             return res.status(400).json({ message: "Horário não permitido para registro." });
-        }*/
+        }
 
         // Para /increment
         const { rows } = await pool.query('SELECT quantidade FROM registros ORDER BY id DESC LIMIT 1');
@@ -79,10 +81,9 @@ app.post('/increment_econo', async (req, res) => {
             estaNoIntervalo(horaAtual, "10:30", "14:00") ||   // Almoço
             estaNoIntervalo(horaAtual, "17:30", "19:45");     // Jantar
 
-        /*if (!emHorarioPermitido) {
+        if (!emHorarioPermitido) {
             return res.status(400).json({ message: "Horário não permitido para registro." });
-        }*/
-
+        }
         // Para /increment_econo
         const { rows } = await pool.query('SELECT quantidade FROM economizados ORDER BY id DESC LIMIT 1');
         const currentCount = rows.length > 0 ? rows[0].quantidade : 0;
@@ -107,18 +108,26 @@ function getCountQuery(period) {
     switch (period) {
         case 'day':
             return `
-                SELECT COUNT(*) AS total FROM registros WHERE CAST(${data} AS DATE) = (${now})::date`;
+                SELECT COUNT(*) AS total
+                FROM registros
+                WHERE CAST(${data} AS DATE) = CURRENT_DATE`; // Comparação com a data atual
         case 'week':
             return `
-                SELECT COUNT(*) AS total FROM registros WHERE EXTRACT(WEEK FROM ${data}) = EXTRACT(WEEK FROM ${now})
+                SELECT COUNT(*) AS total
+                FROM registros
+                WHERE EXTRACT(WEEK FROM ${data}) = EXTRACT(WEEK FROM ${now})
                 AND EXTRACT(YEAR FROM ${data}) = EXTRACT(YEAR FROM ${now})`;
         case 'month':
             return `
-                SELECT COUNT(*) AS total FROM registros WHERE EXTRACT(MONTH FROM ${data}) = EXTRACT(MONTH FROM ${now})
+                SELECT COUNT(*) AS total
+                FROM registros
+                WHERE EXTRACT(MONTH FROM ${data}) = EXTRACT(MONTH FROM ${now})
                 AND EXTRACT(YEAR FROM ${data}) = EXTRACT(YEAR FROM ${now})`;
         case 'year':
             return `
-                SELECT COUNT(*) AS total FROM registros WHERE EXTRACT(YEAR FROM ${data}) = EXTRACT(YEAR FROM ${now})`;
+                SELECT COUNT(*) AS total
+                FROM registros
+                WHERE EXTRACT(YEAR FROM ${data}) = EXTRACT(YEAR FROM ${now})`;
         default:
             throw new Error('Invalid period');
     }
