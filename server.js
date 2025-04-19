@@ -16,7 +16,7 @@ app.use(express.json());
 
 app.get('/current-count', async (req, res) => {
     try {
-        const { rows } = await pool.query('SELECT COUNT(*) AS total FROM registros');
+        const { rows } = await pool.query(`SELECT COUNT(*) AS total FROM registros`);
         const count1 = rows.length > 0 ? rows[0].quantidade : 0;
         res.json({ count: count1 });
     } catch (err) {
@@ -26,7 +26,7 @@ app.get('/current-count', async (req, res) => {
 
 app.get('/current-econo', async (req, res) => {
     try {
-        const { rows } = await pool.query('SELECT COUNT(*) AS total FROM economizados');
+        const { rows } = await pool.query(`SELECT COUNT(*) AS total FROM economizados`);
         const countEcono = rows.length > 0 ? rows[0].quantidade : 0;
         res.json({ countEcono });
     } catch (err) {
@@ -54,7 +54,7 @@ app.post('/increment', async (req, res) => {
         }
 
         // Para /increment
-        const { rows } = await pool.query('SELECT quantidade FROM registros ORDER BY id DESC LIMIT 1');
+        const { rows } = await pool.query(`SELECT COUNT(*) AS total FROM registros`);
         const currentCount = rows.length > 0 ? rows[0].quantidade : 0;
         const newCount = currentCount + 1;
 
@@ -83,7 +83,7 @@ app.post('/increment_econo', async (req, res) => {
             return res.status(400).json({ message: "Horário não permitido para registro." });
         }
         // Para /increment_econo
-        const { rows } = await pool.query('SELECT quantidade FROM economizados ORDER BY id DESC LIMIT 1');
+        const { rows } = await pool.query(`SELECT COUNT(*) AS total FROM economizados`);
         const currentCount = rows.length > 0 ? rows[0].quantidade : 0;
         const newCount = currentCount + 1;
 
