@@ -12,8 +12,6 @@ app.listen(port, () => console.log('Servidor iniciado na porta', port));
 app.use(cors());
 app.use(express.json());
 
-const API_URL = 'https://sustentabilidade-server.onrender.com';
-
 // Rotas
 
 app.get('/current-count', async (req, res) => {
