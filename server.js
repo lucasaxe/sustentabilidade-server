@@ -9,7 +9,15 @@ const port = 3000;
 
 app.listen(port, () => console.log('Servidor iniciado na porta', port));
 
-app.use(cors());
+
+const corsOptions = {
+    origin: 'https://www.unicopos.com.br', // Permitindo somente requisições do seu domínio
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Rotas
