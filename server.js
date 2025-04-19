@@ -34,34 +34,67 @@ app.get('/current-econo', async (req, res) => {
     }
 });
 
+const estaNoIntervalo = (horaAtual, horaInicial, horaFinal) => {
+    return horaAtual >= horaInicial && horaAtual < horaFinal;
+};
+
 app.post('/increment', async (req, res) => {
     try {
         const agora = moment().tz('America/Sao_Paulo');
+        const horaAtual = agora.format('HH:mm'); // Formato "HH:mm"
+
+        // Verificar se está dentro de algum horário permitido
+        const emHorarioPermitido = 
+            estaNoIntervalo(horaAtual, "07:00", "08:30") ||   // Café da manhã
+            estaNoIntervalo(horaAtual, "10:30", "14:00") ||   // Almoço
+            estaNoIntervalo(horaAtual, "17:30", "19:45");     // Jantar
+
+        if (!emHorarioPermitido) {
+            return res.status(400).json({ message: "Horário não permitido para registro." });
+        }
+
+        // Para /increment
         const { rows } = await pool.query('SELECT quantidade FROM registros ORDER BY id DESC LIMIT 1');
         const currentCount = rows.length > 0 ? rows[0].quantidade : 0;
         const newCount = currentCount + 1;
 
         await pool.query('INSERT INTO registros (quantidade, data) VALUES ($1, (NOW() AT TIME ZONE \'America/Sao_Paulo\'))', [newCount]);
+        
         res.json({ count: newCount });
+
     } catch (err) {
-        res.status(500).send(err);
+        console.error(err);
+        res.status(500).send('Erro interno do servidor.');
     }
 });
 
 app.post('/increment_econo', async (req, res) => {
     try {
-        const agora = new Date();
-        const horas = agora.getHours();
-        const minutos = agora.getMinutes();
+        const agora = moment().tz('America/Sao_Paulo');
+        const horaAtual = agora.format('HH:mm'); // Formato "HH:mm"
 
+        // Verificar se está dentro de algum horário permitido
+        const emHorarioPermitido = 
+            estaNoIntervalo(horaAtual, "07:00", "08:30") ||   // Café da manhã
+            estaNoIntervalo(horaAtual, "10:30", "14:00") ||   // Almoço
+            estaNoIntervalo(horaAtual, "17:30", "19:45");     // Jantar
+
+        if (!emHorarioPermitido) {
+            return res.status(400).json({ message: "Horário não permitido para registro." });
+        }
+
+        // Para /increment_econo
         const { rows } = await pool.query('SELECT quantidade FROM economizados ORDER BY id DESC LIMIT 1');
         const currentCount = rows.length > 0 ? rows[0].quantidade : 0;
         const newCount = currentCount + 1;
 
         await pool.query('INSERT INTO economizados (quantidade, data) VALUES ($1, (NOW() AT TIME ZONE \'America/Sao_Paulo\'))', [newCount]);
+        
         res.json({ count: newCount });
+
     } catch (err) {
-        res.status(500).send(err);
+        console.error(err);
+        res.status(500).send('Erro interno do servidor.');
     }
 });
 
